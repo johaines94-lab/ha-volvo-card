@@ -1,13 +1,16 @@
 # Volvo Car Card
 
 A [Home Assistant](https://www.home-assistant.io/) Lovelace card for vehicles exposed by the
-[Volvo integration](https://www.home-assistant.io/integrations/volvo/). Works with combustion,
-plug-in hybrid, and full-electric Volvos — the card figures out which stats to show based on
-which entities you give it, so the same card works whether you drive a gas XC60 or an electric EX30.
+[Volvo integration](https://www.home-assistant.io/integrations/volvo/), styled after the layout of
+the official Volvo app. Works with combustion, plug-in hybrid, and full-electric Volvos — the card
+figures out which stats to show based on which entities you give it, so the same card works whether
+you drive a gas XC60 or an electric EX30.
 
-Shows a cropped car render, a headline range/battery stat, a secondary fuel/electric stat, lock/
-charging status text, and (for PHEV/BEV) a charging pulse animation and charge-cable overlay when
-plugged in.
+The car render is pulled automatically for your specific vehicle from your Volvo account (see
+[The image backend](#the-image-backend-required-separately--not-part-of-the-hacs-install) below),
+cropped the same way as in the app, alongside a headline range/battery stat, a secondary fuel/
+electric stat, lock/charging status text, and (for PHEV/BEV) a charging pulse animation and
+charge-cable overlay when plugged in.
 
 ## Screenshots
 
