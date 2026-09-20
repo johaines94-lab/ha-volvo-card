@@ -22,12 +22,35 @@ charge-cable overlay when plugged in.
 | Plugged in | ![Plugged in, light mode](assets/light-mode-plugged-in.jpg) | ![Plugged in, dark mode](assets/dark-mode-plugged-in.jpg) |
 | Charging | ![Charging, light mode](assets/light-mode-charging.jpg) | ![Charging, dark mode](assets/dark-mode-charging.jpg) |
 
-## Install (HACS)
+## Installation
 
-1. HACS → Frontend → ⋮ → Custom repositories → add this repo URL, category "Dashboard".
-2. Install "Volvo Car Card", then add the resource if HACS doesn't do it automatically
-   (Settings → Dashboards → Resources → `/hacsfiles/volvo-car-card/volvo-car-card.js`, type: JS module).
-3. Add a `type: custom:volvo-car-card` card to a dashboard (see config below).
+There are two ways to install the card. Pick whichever you're more comfortable with — both end up
+in the same place.
+
+### Option 1: Add as a custom repository (recommended if you have HACS)
+
+1. Open **HACS** in your Home Assistant sidebar, then go to the **Frontend** section.
+2. Click the **⋮** menu (top right) → **Custom repositories**.
+3. Paste in this repository's URL, set **Category** to `Dashboard`, then click **Add**.
+4. Search for **Volvo Car Card** in HACS → Frontend, open it, and click **Download**.
+5. Reload your browser tab (or restart Home Assistant) so the new card is picked up.
+
+### Option 2: Add manually (no HACS needed)
+
+1. Download `volvo-car-card.js` from this repository (**Code → Download ZIP**, then unzip, or grab
+   the file directly from the [repo](.)).
+2. Copy `volvo-car-card.js` into the `www` folder inside your Home Assistant `config` directory
+   (create a `www` folder there if it doesn't exist yet — e.g. `config/www/volvo-car-card.js`).
+3. In Home Assistant, go to **Settings → Dashboards**, click the **⋮** menu (top right) →
+   **Resources**.
+4. Click **Add Resource**, set the URL to `/local/volvo-car-card.js` and the type to
+   **JavaScript Module**, then click **Create**.
+
+### Add the card to a dashboard
+
+Once installed (via either option above), edit any dashboard, click **Add Card**, choose
+**Manual**, and paste in a config like the one below — or add it as `type: custom:volvo-car-card`
+directly (see config below).
 
 ## Card config
 
