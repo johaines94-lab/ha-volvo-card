@@ -1,0 +1,15 @@
+import { VolvoCardLabels } from "./types";
+
+export const DEFAULT_LABELS: Required<VolvoCardLabels> = {
+  unlocked: "Unlocked",
+  locked: "Locked",
+  scheduled: "Scheduled",
+  charging: "Charging",
+  lock: "Lock",
+  unlock: "Unlock",
+  climate: "Climate",
+};
+
+export function label(labels: VolvoCardLabels | undefined, key: keyof VolvoCardLabels): string {
+  return labels?.[key] ?? DEFAULT_LABELS[key];
+}

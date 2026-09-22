@@ -1,4 +1,4 @@
-import { ChargeState, HomeAssistant, VehicleKind, VolvoCardEntities } from "./types";
+import { ChargeState, HomeAssistant, StatusKey, VehicleKind, VolvoCardEntities } from "./types";
 
 export function getState(hass: HomeAssistant, entityId?: string): string | undefined {
   if (!entityId) return undefined;
@@ -8,6 +8,18 @@ export function getState(hass: HomeAssistant, entityId?: string): string | undef
 export function getAttr(hass: HomeAssistant, entityId: string | undefined, attr: string): any {
   if (!entityId) return undefined;
   return hass.states[entityId]?.attributes?.[attr];
+}
+
+/**
+ * `value` can be either an entity ID (whose `attr` attribute holds the image URL) or a literal
+ * URL/local path (e.g. `/local/assets/car.png`) — whichever it is, this returns the URL to use.
+ */
+export function resolveImage(hass: HomeAssistant, value: string | undefined, attr: string): string | undefined {
+  if (!value) return undefined;
+  if (hass.states[value] !== undefined) {
+    return getAttr(hass, value, attr) || undefined;
+  }
+  return value;
 }
 
 export function numState(hass: HomeAssistant, entityId?: string): number | undefined {
@@ -62,16 +74,16 @@ export function deriveChargeState(
   return isCharging(hass, entities) ? "charging" : "scheduled";
 }
 
-export function statusText(
+export function statusKey(
   hass: HomeAssistant,
   entities: VolvoCardEntities,
   chargeState: ChargeState,
   kind: VehicleKind
-): string {
+): StatusKey {
   if (kind === "ice") {
     const isHome = getState(hass, entities.location) === "home";
     const isLocked = getState(hass, entities.lock) === "locked";
-    if (isHome && !isLocked) return "Unlocked";
+    if (isHome && !isLocked) return "unlocked";
     return "";
   }
 
@@ -80,11 +92,11 @@ export function statusText(
   const battery = numState(hass, entities.battery) ?? 0;
   const isFullyCharged = battery >= 100;
 
-  if (isHome && !isLocked) return "Unlocked";
+  if (isHome && !isLocked) return "unlocked";
   if (chargeState === "scheduled") {
-    return isFullyCharged && isLocked ? "Locked" : "Scheduled";
+    return isFullyCharged && isLocked ? "locked" : "scheduled";
   }
-  if (chargeState === "charging") return "Charging";
-  if (isLocked) return "Locked";
+  if (chargeState === "charging") return "charging";
+  if (isLocked) return "locked";
   return "";
 }

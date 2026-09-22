@@ -94,6 +94,62 @@ toggle (shown when either `start_climatisation` or `stop_climatisation` is set �
 integration exposes these as momentary `button.*` entities, not a single on/off switch, so the card
 tracks the on/off state itself and presses whichever button matches).
 
+## Cable & pulse overlay (per-model tuning)
+
+The charge cable image and the charging-pulse glow are both positioned as an overlay on top of the
+car photo, but the charge port isn't in the same spot on every car's crop — so the same fixed
+position doesn't line up for every model. The card handles this two ways, and you can use either or
+both:
+
+1. **Built-in model presets.** Set `model` to a known model name and the card applies a preset
+   tuned for it:
+   ```yaml
+   type: custom:volvo-car-card
+   model: v60
+   entities:
+     ...
+   ```
+   Presets live in [`src/overlays.ts`](src/overlays.ts). Right now that list is short (`v60`, plus
+   the default the card was originally tuned against) — if you measure a model that isn't in there,
+   a PR adding it helps the next person with the same car.
+2. **Manual override.** Set any of the four `overlay` values yourself — this takes precedence over
+   whatever the `model` preset (or the default) would otherwise use, so you can fix it immediately
+   without waiting on a preset:
+   ```yaml
+   overlay:
+     cable_bottom: 22px   # distance from the bottom of the card
+     cable_width: 58%     # cable image width, as % of card width
+     pulse_left: 60%      # pulse glow anchor, as % of card width
+     pulse_top: 59%       # pulse glow anchor, as % of card height
+   ```
+
+To find the right values for your own car: open your dashboard's browser dev tools, select the
+`.cable` and `.pulse-container` elements, and nudge their `bottom`/`width`/`left`/`top` in the
+inspector until the cable lines up with the charge port and the pulse glow sits behind it. Whatever
+values you land on are exactly what goes into `overlay` above.
+
+## Translations
+
+The card ships in English. There are only a handful of on-screen labels — the status text over the
+car photo (`Unlocked`, `Locked`, `Scheduled`, `Charging`) and the action-dialog buttons (`Lock`,
+`Unlock`, `Climate`) — so instead of bundling full locale files, you can override just the ones you
+want via a `labels` block in the card config. Anything you don't set stays in English:
+
+```yaml
+type: custom:volvo-car-card
+name: XC90
+entities:
+  ...
+labels:
+  unlocked: Ontgrendeld
+  locked: Vergrendeld
+  scheduled: Gepland
+  charging: Opladen
+  lock: Vergrendel
+  unlock: Ontgrendel
+  climate: Klimaat
+```
+
 ## The image backend (required separately — not part of the HACS install)
 
 The Volvo integration can hand back a signed, temporary render URL for your car
@@ -166,11 +222,13 @@ the render once by hand and serve it as a static file instead:
    above and check the resulting sensor's attributes) to get the current signed URL.
 2. Open that URL in a normal desktop browser tab and save the image (right-click → Save Image As).
 3. Copy the saved file into `config/www/assets/`, e.g.
-   `config/www/assets/volvo-xc90-exterior-back.png`.
-4. Point the card at it directly as a plain path — no entity needed:
+   `config/www/assets/volvo-xc90-exterior-back.png` (`config/www/...` maps to `/local/...`).
+4. Point `exterior_back` / `exterior_side_left` at it directly as a plain path — no entity needed,
+   the card accepts either an entity ID *or* a literal path/URL for these:
    ```yaml
    images:
      exterior_back: /local/assets/volvo-xc90-exterior-back.png
+     exterior_side_left: /local/assets/volvo-xc90-exterior-side-left.png
    ```
 
 Since this is a manual, one-time step, you'll need to repeat it if you ever want a fresher render

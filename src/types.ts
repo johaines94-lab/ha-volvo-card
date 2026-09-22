@@ -31,12 +31,35 @@ export interface VolvoCardImages {
   fallback?: string;
 }
 
+export interface VolvoCardOverlay {
+  cable_bottom?: string;
+  cable_width?: string;
+  pulse_left?: string;
+  pulse_top?: string;
+}
+
+export interface VolvoCardLabels {
+  unlocked?: string;
+  locked?: string;
+  scheduled?: string;
+  charging?: string;
+  lock?: string;
+  unlock?: string;
+  climate?: string;
+}
+
 export interface VolvoCardConfig {
   type: string;
   name?: string;
   entities: VolvoCardEntities;
   images?: VolvoCardImages;
+  labels?: VolvoCardLabels;
+  /** Selects a built-in cable/pulse overlay preset tuned for this model, e.g. "v60". See overlays.ts. */
+  model?: string;
+  /** Overrides individual overlay values — takes precedence over the `model` preset. */
+  overlay?: VolvoCardOverlay;
 }
 
 export type ChargeState = "idle" | "scheduled" | "charging";
 export type VehicleKind = "hybrid" | "bev" | "ice" | "unknown";
+export type StatusKey = "unlocked" | "locked" | "scheduled" | "charging" | "";

@@ -3,15 +3,15 @@ import { customElement, property, state } from "lit/decorators.js";
 import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 import { HomeAssistant, VolvoCardConfig, VolvoCardEntities, VehicleKind, ChargeState } from "./types";
 import {
-  getAttr,
   getState,
   numState,
+  resolveImage,
   round,
   deriveVehicleKind,
   deriveChargeState,
   isConnected,
   isCharging,
-  statusText,
+  statusKey,
 } from "./state";
 import {
   HEDVIG_FONT_WOFF2,
@@ -21,6 +21,8 @@ import {
   FAN_ICON_INNER,
   CABLE_IMAGE_PNG,
 } from "./assets";
+import { label } from "./labels";
+import { resolveOverlay } from "./overlays";
 
 interface HeaderMain {
   value: number;
@@ -128,8 +130,8 @@ export class VolvoCarCard extends LitElement {
     const { images } = this.config;
     const src =
       (connected
-        ? images && getAttr(this.hass, images.exterior_back, "exterior_back")
-        : images && getAttr(this.hass, images.exterior_side_left, "exterior_side_left")) ||
+        ? images && resolveImage(this.hass, images.exterior_back, "exterior_back")
+        : images && resolveImage(this.hass, images.exterior_side_left, "exterior_side_left")) ||
       images?.fallback ||
       "";
 
@@ -172,7 +174,8 @@ export class VolvoCarCard extends LitElement {
     const main = this.headerMain(kind, chargeState);
     const sub1 = this.headerSub1(kind, chargeState);
     const sub2 = this.headerSub2(kind, chargeState);
-    const status = statusText(this.hass, e, chargeState, kind);
+    const sKey = statusKey(this.hass, e, chargeState, kind);
+    const status = sKey ? label(this.config.labels, sKey) : "";
     const { style: imgStyle, hasImage } = this.carImageStyle(connected);
     const isDark = this.hass.themes?.darkMode ?? true;
     // Text over the car photo stays white regardless of theme (the photo's own
@@ -255,11 +258,11 @@ export class VolvoCarCard extends LitElement {
             ? html`
                 <button
                   class="icon-button ${themeClass}"
-                  aria-label=${isLocked ? "Unlock" : "Lock"}
+                  aria-label=${isLocked ? label(this.config.labels, "unlock") : label(this.config.labels, "lock")}
                   @click=${() => this.callLock(!isLocked)}
                 >
                   ${this.renderStrokeIcon(isLocked ? LOCK_ICON_INNER : LOCK_OPEN_ICON_INNER)}
-                  <span>${isLocked ? "Unlock" : "Lock"}</span>
+                  <span>${isLocked ? label(this.config.labels, "unlock") : label(this.config.labels, "lock")}</span>
                 </button>
               `
             : nothing}
@@ -267,11 +270,11 @@ export class VolvoCarCard extends LitElement {
             ? html`
                 <button
                   class="icon-button ${themeClass} ${this.climateOn ? "active" : ""}"
-                  aria-label="Climate"
+                  aria-label=${label(this.config.labels, "climate")}
                   @click=${() => this.toggleClimate()}
                 >
                   ${this.renderStrokeIcon(FAN_ICON_INNER)}
-                  <span>Climate</span>
+                  <span>${label(this.config.labels, "climate")}</span>
                 </button>
               `
             : nothing}
@@ -301,12 +304,18 @@ export class VolvoCarCard extends LitElement {
   }
 
   private renderCable(): TemplateResult {
-    return html`<img class="cable" src=${CABLE_IMAGE_PNG} />`;
+    const overlay = resolveOverlay(this.config.model, this.config.overlay);
+    return html`<img
+      class="cable"
+      src=${CABLE_IMAGE_PNG}
+      style="bottom: ${overlay.cable_bottom}; width: ${overlay.cable_width};"
+    />`;
   }
 
   private renderPulse(): TemplateResult {
+    const overlay = resolveOverlay(this.config.model, this.config.overlay);
     return html`
-      <div class="pulse-container">
+      <div class="pulse-container" style="left: ${overlay.pulse_left}; top: ${overlay.pulse_top};">
         <span class="pulse" style="animation-delay: 0s"></span>
         <span class="pulse" style="animation-delay: 2s"></span>
         <span class="pulse" style="animation-delay: 4s"></span>
@@ -354,8 +363,7 @@ export class VolvoCarCard extends LitElement {
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      left: 56%;
-      top: 48%;
+      /* left/top are set inline per-model — see resolveOverlay() in overlays.ts */
       width: 0;
       height: 0;
     }
@@ -397,8 +405,7 @@ export class VolvoCarCard extends LitElement {
     .cable {
       position: absolute;
       left: 0;
-      bottom: 64px;
-      width: 54%;
+      /* bottom/width are set inline per-model — see resolveOverlay() in overlays.ts */
       height: auto;
       object-fit: contain;
       pointer-events: none;
