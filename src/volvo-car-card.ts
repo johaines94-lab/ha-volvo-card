@@ -19,6 +19,7 @@ import {
   LOCK_ICON_INNER,
   LOCK_OPEN_ICON_INNER,
   FAN_ICON_INNER,
+  CABLE_IMAGE_PNG,
 } from "./assets";
 
 interface HeaderMain {
@@ -300,7 +301,7 @@ export class VolvoCarCard extends LitElement {
   }
 
   private renderCable(): TemplateResult {
-    return html`<img class="cable" src="/local/assets/volvo-charge-cable.png" />`;
+    return html`<img class="cable" src=${CABLE_IMAGE_PNG} />`;
   }
 
   private renderPulse(): TemplateResult {

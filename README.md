@@ -98,20 +98,32 @@ tracks the on/off state itself and presses whichever button matches).
 
 The Volvo integration can hand back a signed, temporary render URL for your car
 (`volvo.get_image_url`), but a Lovelace card is pure frontend JS — it can't call HA service actions,
-so it can't fetch and cache that image itself. That has to happen in your own `configuration.yaml`
-(or a packages file), once, and the card just reads whatever local path the result ends up at.
+so it can't fetch that image itself. That has to happen in your own `configuration.yaml` (or a
+packages file), once, and the card just reads whatever URL/path the result ends up at.
 
-Add this to your Home Assistant config (adjust `entry` to your own Volvo config-entry ID, found in
-the URL bar under **Settings → Devices & Services → Volvo**, `#config_entry=...`):
+**Known issue: server-side downloading gets blocked (HTTP 403).** Volvo's image CDN
+(`cas.volvocars.com`) sits behind Akamai bot protection. HA's own `downloader.download_file`
+action (and `curl` from the HA host) gets rejected with a 403 from `AkamaiGHost`, even though the
+exact same URL opens fine in a real browser. This isn't a bug in this card or in `volvo.get_image_url`
+— the URL is valid, but Akamai fingerprints the *request*, not just the URL, and HA's backend HTTP
+client doesn't look enough like a browser to pass. **Don't route the image through
+`downloader.download_file`** — it will fail for most users.
+
+### Recommended: point the card straight at the live URL
+
+Have your template sensor expose the raw signed URL as an attribute, and point the card's `images`
+config directly at it. The image then loads in the *browser* viewing your dashboard, which is a real
+browser and isn't blocked by Akamai — and the browser's normal HTTP cache means it isn't
+re-fetched from Volvo on every dashboard load anyway, just when the cache expires or the URL
+changes.
 
 ```yaml
-downloader:
-  download_dir: assets/volvo   # anywhere under /config that maps to /local
-
 template:
   - trigger:
       - trigger: homeassistant
         event: start
+      - trigger: time_pattern
+        hours: "/12"   # re-pull periodically in case Volvo rotates the signed URL
     action:
       - action: volvo.get_image_url
         data:
@@ -120,37 +132,53 @@ template:
             - exterior_back
             - exterior_side_left
         response_variable: volvo_images
-      - action: downloader.download_file
-        data:
-          url: >-
-            {{ volvo_images.images | selectattr('type','eq','exterior_back') | map(attribute='url') | first | default('') }}
-          filename: exterior-back.jpg
-          overwrite: true
-      - action: downloader.download_file
-        data:
-          url: >-
-            {{ volvo_images.images | selectattr('type','eq','exterior_side_left') | map(attribute='url') | first | default('') }}
-          filename: exterior-side-left.jpg
-          overwrite: true
     sensor:
       - name: "Volvo Images"
         unique_id: volvo_images
         state: "ok"
         attributes:
-          exterior_back: "/local/assets/volvo/exterior-back.jpg"
-          exterior_side_left: "/local/assets/volvo/exterior-side-left.jpg"
+          exterior_back: >-
+            {{ volvo_images.images | selectattr('type','eq','exterior_back') | map(attribute='url') | first | default('') }}
+          exterior_side_left: >-
+            {{ volvo_images.images | selectattr('type','eq','exterior_side_left') | map(attribute='url') | first | default('') }}
+```
+
+```yaml
+images:
+  exterior_back: sensor.volvo_images
+  exterior_side_left: sensor.volvo_images
+  fallback: /local/assets/volvo-xc90.png
 ```
 
 Notes:
 - `volvo.get_image_url` returns `{"images": [{"type": "exterior_back", "url": "..."}, ...]}` — a
   list keyed by `type`, not a flat dict.
-- This trigger only fires on HA start, so the renders are fetched once and cached locally — a full
-  restart is needed to re-pull if Volvo ever rotates the URLs (they're effectively static per
-  vehicle, so this is intentional).
-- Uses the core `downloader` integration rather than a shell command, so it works regardless of
-  what actually runs your HA (HAOS, Docker, a Pi, Windows, ...).
-- If you don't want to set this up, just omit `images` from the card config (or point `fallback` at
-  a static image you host yourself) — everything else still works.
+- The URL is signed and time-limited, so re-pulling periodically (not just on HA start) keeps it
+  from going stale — the `time_pattern` trigger above does this every 12 hours; adjust to taste.
+
+### Alternative: a fully static, manually-downloaded image
+
+If you'd rather not depend on Volvo's servers at dashboard-load time at all — e.g. for a fully
+offline dashboard, or if your browser is *also* blocked by Akamai for some reason — you can fetch
+the render once by hand and serve it as a static file instead:
+
+1. Call `volvo.get_image_url` once from **Developer Tools → Actions** in HA (or use the template
+   above and check the resulting sensor's attributes) to get the current signed URL.
+2. Open that URL in a normal desktop browser tab and save the image (right-click → Save Image As).
+3. Copy the saved file into `config/www/assets/`, e.g.
+   `config/www/assets/volvo-xc90-exterior-back.png`.
+4. Point the card at it directly as a plain path — no entity needed:
+   ```yaml
+   images:
+     exterior_back: /local/assets/volvo-xc90-exterior-back.png
+   ```
+
+Since this is a manual, one-time step, you'll need to repeat it if you ever want a fresher render
+(e.g. after a repaint/respec in your Volvo account) — the URL itself doesn't need to be re-fetched
+automatically since you're no longer depending on it after the download.
+
+If you don't want to set any of this up, just omit `images` from the card config (or point
+`fallback` at a static image you host yourself) — everything else still works.
 
 ## Development
 
