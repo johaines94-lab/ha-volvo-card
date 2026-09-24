@@ -63,7 +63,7 @@ export class VolvoCarCard extends LitElement {
         distance_to_empty_battery: "sensor.volvo_xxx_distance_to_empty_battery",
         distance_to_empty_tank: "sensor.volvo_xxx_distance_to_empty_tank",
         fuel_amount: "sensor.volvo_xxx_fuel_amount",
-        fuel_tank_capacity_l: 50,
+        fuel_tank_capacity_l: 15.9,
         charging_connection_status: "sensor.volvo_xxx_charging_connection_status",
         charging_status: "sensor.volvo_xxx_charging_status",
         lock: "lock.volvo_xxx_lock",
@@ -91,7 +91,7 @@ export class VolvoCarCard extends LitElement {
       return { value: round(battery), unit: "%" };
     }
     // idle or charging: total range (battery-only vehicles simply have dteTank = 0)
-    return { value: round(dteBattery + dteTank), unit: "km" };
+    return { value: round(dteBattery + dteTank), unit: "mi" };
   }
 
   private headerSub1(kind: VehicleKind, chargeState: ChargeState): HeaderSub | null {
@@ -110,12 +110,12 @@ export class VolvoCarCard extends LitElement {
 
     if (kind === "hybrid") {
       if (chargeState === "charging") return fuelSub();
-      return { icon: "lightning", value: `${round(dteBattery)} km`, label: "electric" };
+      return { icon: "lightning", value: `${round(dteBattery)} mi`, label: "electric" };
     }
 
     // bev
     if (chargeState === "scheduled") {
-      return { icon: "lightning", value: `${round(dteBattery)} km`, label: "electric" };
+      return { icon: "lightning", value: `${round(dteBattery)} mi`, label: "electric" };
     }
     return null;
   }
@@ -123,7 +123,7 @@ export class VolvoCarCard extends LitElement {
   private headerSub2(kind: VehicleKind, chargeState: ChargeState): string | null {
     if (kind !== "hybrid" || chargeState === "charging") return null;
     const dteTank = numState(this.hass, this.config.entities.distance_to_empty_tank) ?? 0;
-    return `${round(dteTank)} km fuel`;
+    return `${round(dteTank)} mi fuel`;
   }
 
   private carImageStyle(connected: boolean): { style: Record<string, string>; hasImage: boolean } {
