@@ -85,7 +85,7 @@ export class VolvoCarCard extends LitElement {
     const battery = numState(this.hass, e.battery) ?? 0;
 
     if (kind === "ice") {
-      return { value: round(dteTank), unit: "km" };
+      return { value: round(dteTank), unit: "mi" };
     }
     if (chargeState === "scheduled") {
       return { value: round(battery), unit: "%" };
