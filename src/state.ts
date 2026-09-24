@@ -81,9 +81,7 @@ export function statusKey(
   kind: VehicleKind
 ): StatusKey {
   if (kind === "ice") {
-    const isHome = getState(hass, entities.location) === "home";
     const isLocked = getState(hass, entities.lock) === "locked";
-    if (isHome && !isLocked) return "unlocked";
     return "";
   }
 
